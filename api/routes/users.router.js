@@ -1,8 +1,7 @@
 const express = require('express');
 const { StreamChat } = require('stream-chat');
-const { connectToDatabase } = require('../lib/db');
-const User = require('../lib/models/User');
-
+const { connectToDatabase } = require('../lib/db.js');
+const User = require('../lib/models/User_temp.js'); 
 const router = express.Router();
 
 router.post('/stream-token', async (req, res) => {
@@ -24,9 +23,9 @@ router.post('/stream-token', async (req, res) => {
 
     try {
         await connectToDatabase();
+        // Ensure you have a User model matching this query
         const mongoUser = await User.findOne({ clerkId: clerkUserId });
         
-       
         await chatClient.upsertUser({
             id: clerkUserId, 
             name: mongoUser?.username || 'Guest', 

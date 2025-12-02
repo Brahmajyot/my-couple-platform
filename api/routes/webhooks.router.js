@@ -1,8 +1,7 @@
 const express = require('express');
 const { Webhook } = require('svix');
 const { connectToDatabase } = require('../lib/db');
-const User = require('../lib/models/User');
-
+const User = require('../lib/models/User_temp.js'); 
 const router = express.Router();
 
 const rawBodyMiddleware = (req, res, next) => {
