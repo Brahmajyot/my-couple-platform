@@ -4,15 +4,15 @@ import { StreamChat } from 'stream-chat';
 import { StreamVideoClient } from '@stream-io/video-client';
 import { Chat } from 'stream-chat-react';
 import { StreamVideo } from '@stream-io/video-react-sdk';
-import Spinner from './Spinner';      
+import Spinner from './Spinner';
+
 const getApiBaseUrl = () => {
-  
+  // If we are on localhost, point to the Express server (usually port 5000)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-   
-    return 'http://localhost:3000/api'; 
+    return 'http://localhost:5000/api'; 
   }
- 
-  return `${window.location.origin}/api`;
+  // On Vercel, use the relative path (handled by vercel.json rewrites)
+  return '/api';
 };
 
 export default function StreamProvider({ children }) {
@@ -33,9 +33,17 @@ export default function StreamProvider({ children }) {
       const apiKey = import.meta.env.VITE_STREAM_API_KEY;
       const clerkUserId = user.id;
 
+      if (!apiKey) {
+        setLoadingError("Stream API Key is missing. Check Vercel Environment Variables.");
+        return;
+      }
+
       try {
-        const clerkToken = await getToken({ template: 'stream-token' });
+        // ✅ FIX 1: Remove { template: 'stream-token' }. 
+        // We just need a standard token to prove to our backend who we are.
+        const clerkToken = await getToken(); 
         
+        // ✅ FIX 2: Call your Backend API
         const response = await fetch(`${API_BASE_URL}/users/stream-token`, {
           method: 'POST',
           headers: { 
@@ -53,28 +61,43 @@ export default function StreamProvider({ children }) {
         const data = await response.json();
         const { token, userId } = data;
 
+        // 1. Setup Chat Client
         const chatClientInstance = new StreamChat(apiKey);
-        await chatClientInstance.connectUser({ id: userId, name: user.username || user.firstName }, token);
+        await chatClientInstance.connectUser(
+            { 
+                id: userId, 
+                name: user.username || user.firstName || 'User',
+                image: user.imageUrl 
+            }, 
+            token
+        );
         setChatClient(chatClientInstance);
 
+        // 2. Setup Video Client
         const videoClientInstance = new StreamVideoClient({ 
           apiKey, 
-          user: { id: userId, name: user.username || user.firstName }, 
+          user: { 
+              id: userId, 
+              name: user.username || user.firstName || 'User',
+              image: user.imageUrl 
+          }, 
           token 
         });
         setVideoClient(videoClientInstance);
 
       } catch (error) {
         console.error('Stream initialization error:', error);
-        setLoadingError("Failed to connect to real-time services. Please try again.");
+        setLoadingError("Failed to connect to real-time services.");
       }
     };
 
     initializeClient();
 
     return () => {
+      // Cleanup on unmount
       chatClient?.disconnectUser();
-      videoClient?.disconnect();
+      setChatClient(null);
+      setVideoClient(null);
     };
   }, [isLoaded, isSignedIn, user?.id, getToken]);
 
