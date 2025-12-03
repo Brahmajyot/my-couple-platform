@@ -1,54 +1,85 @@
 const express = require('express');
 const { Webhook } = require('svix');
-const { connectToDatabase } = require('../lib/db');
+const bodyParser = require('body-parser');
 const User = require('../lib/models/User_temp.js'); 
+
 const router = express.Router();
 
-const rawBodyMiddleware = (req, res, next) => {
-    req.setEncoding('utf8');
-    req.rawBody = '';
-    req.on('data', chunk => req.rawBody += chunk);
-    req.on('end', () => next());
-};
 
-router.post('/clerk', rawBodyMiddleware, async (req, res) => {
-    const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-    if (!WEBHOOK_SECRET) {
-        return res.status(500).json({ error: 'Missing webhook secret' });
-    }
+router.post('/', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
-    const payload = req.rawBody;
-    const headers = req.headers;
+  if (!WEBHOOK_SECRET) {
+    throw new Error('Please add WEBHOOK_SECRET from Clerk Dashboard to .env or Vercel');
+  }
 
-    const wh = new Webhook(WEBHOOK_SECRET);
-    let event;
-    try {
-        event = wh.verify(payload, {
-            'svix-id': headers['svix-id'],
-            'svix-timestamp': headers['svix-timestamp'],
-            'svix-signature': headers['svix-signature'],
-        });
-    } catch (err) {
-        console.error('Webhook verification failed:', err.message);
-        return res.status(400).json({ error: 'Invalid signature' });
-    }
 
+  const svix_id = req.headers["svix-id"];
+  const svix_timestamp = req.headers["svix-timestamp"];
+  const svix_signature = req.headers["svix-signature"];
+
+ 
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return res.status(400).send('Error occured -- no svix headers');
+  }
+
+
+  const payload = req.body;
+  const body = payload.toString();
+
+  
+  const wh = new Webhook(WEBHOOK_SECRET);
+
+  let evt;
+
+  try {
+    evt = wh.verify(body, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    });
+  } catch (err) {
+    console.error('Error verifying webhook:', err);
+    return res.status(400).send('Error occured');
+  }
+
+ 
+  const eventType = evt.type;
+
+  if (eventType === 'user.created') {
+    const { id, email_addresses, first_name, last_name, username } = evt.data;
     
-    await connectToDatabase();
-    const { id, email_addresses, username } = event.data;
-    const primaryEmail = email_addresses[0].email_address;
-
     try {
-        if (event.type === 'user.created') {
-            await User.create({ clerkId: id, email: primaryEmail, username });
-        } else if (event.type === 'user.updated') {
-            await User.findOneAndUpdate({ clerkId: id }, { email: primaryEmail, username }, { new: true });
-        }
-        return res.status(200).json({ success: true, message: `Processed event: ${event.type}` });
-    } catch (dbError) {
-        console.error('DB error:', dbError);
-        return res.status(500).json({ error: 'Database operation failed.' });
+        await User.create({
+            clerkId: id,
+            email: email_addresses[0].email_address,
+            username: username || first_name,
+            photo: evt.data.image_url,
+        });
+        console.log(`User ${id} created in DB`);
+    } catch (error) {
+        console.log('Error saving user to DB:', error);
     }
+  }
+
+  if (eventType === 'user.updated') {
+     
+      const { id, username, first_name } = evt.data;
+      await User.findOneAndUpdate({ clerkId: id }, { 
+          username: username || first_name,
+          photo: evt.data.image_url
+      });
+  }
+
+  if (eventType === 'user.deleted') {
+      const { id } = evt.data;
+      await User.findOneAndDelete({ clerkId: id });
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Webhook received',
+  });
 });
 
 module.exports = router;
