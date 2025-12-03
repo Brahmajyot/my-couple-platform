@@ -1,28 +1,29 @@
 const mongoose = require('mongoose');
 
-let cached = global.mongoose;
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+let isConnected = false; 
 
-async function connectToDatabase() {
-  if (cached.conn) return cached.conn;
+const connectToDatabase = async () => {
+  mongoose.set('strictQuery', true);
 
-  if (!cached.promise) {
-    const opts = { bufferCommands: false };
-    cached.promise = mongoose.connect(process.env.MONGO_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
+  if (isConnected) {
+    console.log('=> Using existing database connection');
+    return;
+  }
+
+  const dbUri = process.env.MONGODB_URI; 
+
+  if (!dbUri) {
+    throw new Error('MISSING MONGODB_URI in Environment Variables');
   }
 
   try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
+    await mongoose.connect(dbUri);
+    isConnected = true;
+    console.log('=> MongoDB connected successfully');
+  } catch (error) {
+    console.error('=> Error connecting to database:', error);
+    throw error;
   }
-
-  return cached.conn;
-}
+};
 
 module.exports = { connectToDatabase };
