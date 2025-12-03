@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 
 export default function SpotifyMusicBox() {
   // Default to a chill playlist if empty
-  const [spotifyUrl, setSpotifyUrl] = useState('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M');
-  const [embedUrl, setEmbedUrl] = useState('https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M');
-
+  const [spotifyUrl, setSpotifyUrl] = useState('');
+const [embedUrl, setEmbedUrl] = useState('');
   const handleLoadMusic = (e) => {
     e.preventDefault();
     if (!spotifyUrl) return;

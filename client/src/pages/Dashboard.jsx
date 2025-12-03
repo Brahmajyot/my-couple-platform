@@ -29,10 +29,10 @@ export default function Dashboard() {
     if (!client || !user) return;
 
     const loadChannel = async () => {
-      const channel = client.channel('messaging', 'our-private-space', {
-        name: 'Chat',
-        members: [user.id], 
-      });
+     const channel = client.channel('messaging', 'our-private-space-v2', { 
+  name: 'Chat',
+  members: [user.id], 
+});
       await channel.watch();
       setChannel(channel);
     };
