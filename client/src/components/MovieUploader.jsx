@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useUser } from '@clerk/clerk-react';
-import { Link, Plus, Loader2 } from 'lucide-react';
+// ✅ Renamed Link to LinkIcon to avoid confusion with React Router
+import { Link as LinkIcon, Plus, Loader2 } from 'lucide-react';
 
 const getApiBaseUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -13,7 +14,6 @@ const getApiBaseUrl = () => {
 export default function MovieUploader() {
   const { user } = useUser();
   
-  // Changed 'file' to 'movieUrl'
   const [title, setTitle] = useState('');
   const [movieUrl, setMovieUrl] = useState(''); 
   const [status, setStatus] = useState('Idle');
@@ -31,7 +31,6 @@ export default function MovieUploader() {
     try {
       const API_BASE_URL = getApiBaseUrl();
       
-      // We send JSON now, not FormData (because it's just text)
       await axios.post(`${API_BASE_URL}/movies/save-link`, {
         title,
         url: movieUrl,
@@ -43,7 +42,6 @@ export default function MovieUploader() {
       setTitle('');
       setMovieUrl('');
       
-      // Reset success message after 3 seconds
       setTimeout(() => setStatus('Idle'), 3000);
 
     } catch (error) {
@@ -55,18 +53,17 @@ export default function MovieUploader() {
   return (
     <div className="bg-gray-900/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl relative overflow-hidden group">
       
-      {/* Decorative Background Glow */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/20 rounded-full blur-[50px] pointer-events-none"></div>
 
       <div className="relative z-10">
         <h3 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-4 flex items-center gap-2">
-          <Link size={20} className="text-purple-400" />
+          {/* ✅ Used the renamed icon here */}
+          <LinkIcon size={20} className="text-purple-400" />
           Add to Collection
         </h3>
 
         <form onSubmit={handleSaveLink} className="space-y-4">
           
-          {/* Title Input */}
           <div>
             <label className="text-xs text-gray-400 ml-1 mb-1 block">Movie Title</label>
             <input 
@@ -79,7 +76,6 @@ export default function MovieUploader() {
             />
           </div>
 
-          {/* Link Input (Replaces File Input) */}
           <div>
             <label className="text-xs text-gray-400 ml-1 mb-1 block">Paste Link (YouTube, Drive, MP4)</label>
             <input 
@@ -92,7 +88,6 @@ export default function MovieUploader() {
             />
           </div>
           
-          {/* Submit Button */}
           <button 
             type="submit"
             disabled={status === 'Saving...'}
@@ -114,7 +109,6 @@ export default function MovieUploader() {
           </button>
         </form>
 
-        {/* Status Message */}
         {status !== 'Idle' && status !== 'Saving...' && (
             <p className={`mt-3 text-center text-sm font-medium animate-in fade-in slide-in-from-top-2 ${status.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>
                 {status}

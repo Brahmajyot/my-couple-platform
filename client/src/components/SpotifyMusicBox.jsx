@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 export default function SpotifyMusicBox() {
-  // ✅ Correct: Start with empty strings
   const [spotifyUrl, setSpotifyUrl] = useState('');
   const [embedUrl, setEmbedUrl] = useState('');
 
@@ -9,11 +8,16 @@ export default function SpotifyMusicBox() {
     e.preventDefault();
     if (!spotifyUrl) return;
 
-    // ✅ FIX: Correctly convert standard link to Embed link
-    // Input:  https://open.spotify.com/track/xyz
-    // Output: https://open.spotify.com/embed/track/xyz
-    let newUrl = spotifyUrl.replace('open.spotify.com', 'open.spotify.com/embed');
+    let newUrl = spotifyUrl;
+
+    // ✅ FIX: Real logic to convert standard Spotify links to Embed links
+    // Input:  https://open.spotify.com/track/12345...
+    // Output: https://open.spotify.com/embed/track/12345...
     
+    if (newUrl.includes('open.spotify.com') && !newUrl.includes('/embed')) {
+        newUrl = newUrl.replace('open.spotify.com/', 'open.spotify.com/embed/');
+    }
+
     setEmbedUrl(newUrl);
   };
 
