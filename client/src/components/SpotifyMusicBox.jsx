@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 
 export default function SpotifyMusicBox() {
-  // Default to a chill playlist if empty
+  // ✅ Correct: Start with empty strings
   const [spotifyUrl, setSpotifyUrl] = useState('');
-const [embedUrl, setEmbedUrl] = useState('');
+  const [embedUrl, setEmbedUrl] = useState('');
+
   const handleLoadMusic = (e) => {
     e.preventDefault();
     if (!spotifyUrl) return;
 
-    // Convert standard link to Embed link
-    // From: https://open.spotify.com/track/xyz
-    // To:   https://open.spotify.com/embed/track/xyz
-    let newUrl = spotifyUrl.replace('open.spotify.com/', 'open.spotify.com/embed/');
+    // ✅ FIX: Correctly convert standard link to Embed link
+    // Input:  https://open.spotify.com/track/xyz
+    // Output: https://open.spotify.com/embed/track/xyz
+    let newUrl = spotifyUrl.replace('open.spotify.com', 'open.spotify.com/embed');
+    
     setEmbedUrl(newUrl);
   };
 
@@ -39,16 +41,23 @@ const [embedUrl, setEmbedUrl] = useState('');
 
         {/* The Player */}
         <div className="relative w-full aspect-video md:aspect-[2/1] bg-black rounded-2xl overflow-hidden border border-gray-800 shadow-2xl">
-            <iframe 
-                style={{ borderRadius: '12px' }} 
-                src={`${embedUrl}?utm_source=generator&theme=0`} 
-                width="100%" 
-                height="100%" 
-                frameBorder="0" 
-                allowFullScreen="" 
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                loading="lazy"
-            ></iframe>
+            {embedUrl ? (
+                <iframe 
+                    style={{ borderRadius: '12px' }} 
+                    src={`${embedUrl}?utm_source=generator&theme=0`} 
+                    width="100%" 
+                    height="100%" 
+                    frameBorder="0" 
+                    allowFullScreen="" 
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                    loading="lazy"
+                ></iframe>
+            ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                    <span className="text-4xl mb-2">🎵</span>
+                    <p>Paste a link to start the vibes.</p>
+                </div>
+            )}
         </div>
 
         <p className="text-center text-gray-500 text-sm">
