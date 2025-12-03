@@ -4,7 +4,7 @@ import { StreamChat } from 'stream-chat';
 import { StreamVideoClient } from '@stream-io/video-client';
 import { Chat } from 'stream-chat-react';
 import { StreamVideo } from '@stream-io/video-react-sdk';
-import { Spinner } from './Spinner'; 
+import Spinner from './Spinner';      
 const getApiBaseUrl = () => {
   
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
