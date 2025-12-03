@@ -1,7 +1,7 @@
 const express = require('express');
 const { Webhook } = require('svix');
 const bodyParser = require('body-parser');
-const User = require('../lib/models/User_temp.js'); 
+const User = require('../lib/models/user.js'); 
 
 const router = express.Router();
 

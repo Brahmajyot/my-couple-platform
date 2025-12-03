@@ -1,7 +1,7 @@
 const express = require('express');
 const { StreamChat } = require('stream-chat');
 const { connectToDatabase } = require('../lib/db.js');
-const User = require('../lib/models/User_temp.js'); 
+const User = require('../lib/models/user.js'); 
 const router = express.Router();
 
 router.post('/stream-token', async (req, res) => {
