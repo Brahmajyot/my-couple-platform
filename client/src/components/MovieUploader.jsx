@@ -1,5 +1,69 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useUser } from '@clerk/clerk-react';
+
+// Helper to determine URL (Localhost vs Vercel)
+const getApiBaseUrl = () => {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api'; 
+  }
+  return '/api'; // Relative path for Vercel
+};
 
 export default function MovieUploader() {
+  const { user } = useUser();
+  
+  // 1. Create the missing variables (State)
+  const [title, setTitle] = useState('');
+  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState('Idle');
+
+  // 2. Create the missing function
+  const handleUpload = async (e) => {
+    e.preventDefault(); // Stop page refresh
+
+    if (!file || !title) {
+      alert("Please select a file and enter a title.");
+      return;
+    }
+
+    if (!user) {
+        setStatus('Error: You must be logged in.');
+        return;
+    }
+
+    setStatus('Uploading... Please wait.');
+
+    // Prepare the data to send
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('video', file); // 'video' matches backend multer field
+    formData.append('clerkUserId', user.id); 
+    formData.append('username', user.username || user.firstName);
+
+    try {
+      const API_BASE_URL = getApiBaseUrl();
+      
+      // Send to Backend
+      await axios.post(`${API_BASE_URL}/movies/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setStatus(`Uploading... ${percentCompleted}%`);
+        }
+      });
+
+      setStatus('✅ Upload Successful!');
+      setTitle('');
+      setFile(null);
+
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setStatus(`❌ Error: ${error.response?.data?.message || error.message}`);
+    }
+  };
 
   return (
     <div className="bg-gray-800 p-6 rounded-xl shadow-2xl border border-secondary-purple/50">
