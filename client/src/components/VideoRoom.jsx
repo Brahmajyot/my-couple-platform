@@ -70,6 +70,7 @@ export default function VideoRoom() {
                     config={{
                         youtube: { playerVars: { showinfo: 1 } }
                     }}
+                    onError={(e) => console.log("Video Player Error (Swallowed):", e)}
                 />
             </div>
         ) : (
