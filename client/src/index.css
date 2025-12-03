@@ -1,1 +1,59 @@
-@import "tailwindcss";
+/* --- Stream Chat Dark Theme Overrides --- */
+.str-chat {
+  --str-chat__primary-color: #9333ea; /* Purple */
+  --str-chat__active-primary-color: #7e22ce;
+  --str-chat__surface-color: #111827; /* Dark Gray (Tailwind gray-900) */
+  --str-chat__secondary-surface-color: #1f2937; /* Gray-800 */
+  --str-chat__primary-surface-color: #111827;
+  --str-chat__primary-surface-color-low-emphasis: #374151;
+  --str-chat__border-radius: 12px;
+}
+
+/* Backgrounds */
+.str-chat-channel-list, 
+.str-chat__channel-list,
+.str-chat__main-panel,
+.str-chat__thread {
+    background-color: #111827 !important; /* gray-900 */
+}
+
+/* Header */
+.str-chat__header-livestream {
+    background-color: #1f2937 !important; /* gray-800 */
+    border-bottom: 1px solid #374151;
+}
+
+/* Message Input */
+.str-chat__input-flat {
+    background-color: #1f2937 !important;
+    border-top: 1px solid #374151;
+}
+.str-chat__textarea textarea {
+    background-color: #374151 !important;
+    color: white !important;
+}
+
+/* Text Colors */
+.str-chat__message-text-inner {
+    color: #e5e7eb; /* gray-200 */
+}
+.str-chat__header-livestream-left--title {
+    color: white !important;
+}
+
+/* Add to client/src/index.css */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+.animate-blob {
+  animation: blob 7s infinite;
+}
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+.animation-delay-4000 {
+  animation-delay: 4s;
+}

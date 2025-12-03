@@ -1,65 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { StreamVideo, StreamCall, useStreamVideoClient, useCall, CallParticipantsList, CallControls, SpeakerLayout } from '@stream-io/video-react-sdk';
 import { useUser } from '@clerk/clerk-react';
-import { useStreamVideoClient, Call, StreamCall, SpeakerLayout, CallControls } from '@stream-io/video-react-sdk';
+import '@stream-io/video-react-sdk/dist/css/styles.css';
+import Spinner from './Spinner';
 
-export default function CoupleCall({ partnerId }) {
-    const { user } = useUser();
-    const videoClient = useStreamVideoClient();
-    const [call, setCall] = useState(null);
+export default function CoupleCall() {
+  const { user } = useUser();
+  const client = useStreamVideoClient();
+  const [call, setCall] = useState(null);
 
-    const callId = [user?.id, partnerId].sort().join('_call-');
+  useEffect(() => {
+    if (!client || !user) return;
 
-    const startCall = async () => {
-        if (!videoClient || call) return;
-        const newCall = videoClient.call('default', callId);
-
-        try {
-            await newCall.get(); 
-            await newCall.join({ create: true }); 
-            setCall(newCall);
-        } catch (error) {
-            console.error('Failed to join/create call:', error);
-            alert('Failed to start the video call. Check console.');
-        }
+    // Create a call with a fixed ID 'room-1' so both partners join the same one
+    const myCall = client.call('default', 'room-1'); 
+    
+    const joinCall = async () => {
+      try {
+        await myCall.join({ create: true });
+        setCall(myCall);
+      } catch (err) {
+        console.error("Error joining call:", err);
+      }
     };
 
-    const endCall = () => {
-        if (call) {
-            call.leave().then(() => setCall(null));
-        }
-    };
+    joinCall();
 
-    if (call) {
-        return (
-            <div className="bg-gray-900 rounded-xl shadow-2xl overflow-hidden h-96 relative border-4 border-secondary-purple/70">
-                <StreamCall call={call}>
-                    <SpeakerLayout />
-                    <CallControls onLeave={endCall} />
-                </StreamCall>
-                <div className="absolute top-2 left-2 text-xs font-bold text-white bg-secondary-purple px-2 py-1 rounded-full">LIVE</div>
+    return () => {
+      // Optional: Leave call on unmount (or keep it running in background)
+      // myCall.leave(); 
+    };
+  }, [client, user]);
+
+  if (!call) return <div className="h-full w-full flex items-center justify-center bg-gray-900"><Spinner /></div>;
+
+  return (
+    <div className="w-full h-full overflow-hidden rounded-xl bg-black">
+      <StreamCall call={call}>
+        {/* Simple layout that fits in small boxes */}
+        <div className="relative w-full h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                 <SpeakerLayout participantsBarPosition="bottom" />
             </div>
-        );
-    }
-
-    return (
-        <div className="bg-gray-800 p-6 rounded-xl shadow-2xl border border-secondary-purple/50 flex flex-col items-center justify-center h-96 transition duration-300 hover:shadow-secondary-purple/70">
-            <h3 className="text-3xl font-extrabold text-primary-pink mb-2">
-                Live Video Date 📞
-            </h3>
-            <p className="text-gray-400 mb-6 text-center">
-                Connect instantly for a shared movie stream or private chat.
-            </p>
-            <button 
-                onClick={startCall} 
-                disabled={!videoClient}
-                className={`w-48 py-3 rounded-full font-bold text-lg transition duration-300 ${
-                    !videoClient 
-                      ? 'bg-gray-600 cursor-not-allowed' 
-                      : 'bg-secondary-purple hover:bg-primary-pink shadow-lg shadow-secondary-purple/50'
-                }`}
-            >
-                {videoClient ? 'Start Call Now' : 'Connecting Services...'}
-            </button>
+            <div className="bg-gray-900/80 backdrop-blur p-2 flex justify-center scale-75 origin-bottom">
+                 <CallControls />
+            </div>
         </div>
-    );
+      </StreamCall>
+    </div>
+  );
 }

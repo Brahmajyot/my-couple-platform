@@ -1,35 +1,27 @@
 const mongoose = require('mongoose');
 
-const MovieSchema = new mongoose.Schema({
-  uploaderId: { 
-    type: String, 
-    required: true 
-  }, 
-  
-  cfUid: { 
-    type: String, 
-    required: true, 
-    unique: true 
-  }, 
-  
-  title: { 
-    type: String, 
-    required: true 
+const movieSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
   },
-  
-  status: { 
-    type: String, 
-    default: 'processing' 
-  }, 
-  
-  uploadDate: { 
-    type: Date, 
-    default: Date.now 
+  url: {
+    type: String, // Stores the YouTube/Drive link
+    required: true,
   },
-}, 
-{
-  
-  collection: 'coupledata' 
+  uploaderId: {
+    type: String, // Clerk User ID
+    required: true,
+  },
+  uploaderName: {
+    type: String, // Username (so we know who picked the movie)
+    default: 'Anonymous',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-module.exports = mongoose.models.Movie || mongoose.model('Movie', MovieSchema);
+// Check if model exists before creating to avoid Hot Reload errors
+module.exports = mongoose.models.Movie || mongoose.model('Movie', movieSchema);

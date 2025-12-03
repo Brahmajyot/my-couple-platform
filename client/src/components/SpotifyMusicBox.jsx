@@ -1,89 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : `${window.location.origin}/api`;
+import React, { useState } from 'react';
 
 export default function SpotifyMusicBox() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState([]);
-  const [currentTrackUri, setCurrentTrackUri] = useState('spotify:track:5FVd6RIdJcEabkZPFX5TzC'); 
-  const [isSearching, setIsSearching] = useState(false);
+  // Default to a chill playlist if empty
+  const [spotifyUrl, setSpotifyUrl] = useState('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M');
+  const [embedUrl, setEmbedUrl] = useState('https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M');
 
-  const handleSearch = async (e) => {
+  const handleLoadMusic = (e) => {
     e.preventDefault();
-    if (searchTerm.length < 3) return;
-    setIsSearching(true);
-    
-    try {
-      const response = await axios.get(`${API_BASE_URL}/spotify/search`, {
-        params: { q: searchTerm },
-      });
-      setResults(response.data.tracks);
-    } catch (error) {
-      console.error('Frontend Spotify Search Failed:', error);
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+    if (!spotifyUrl) return;
 
-  const handleSelectTrack = (uri) => {
-    setCurrentTrackUri(uri);
-    setResults([]);
-    setSearchTerm('');
+    // Convert standard link to Embed link
+    // From: https://open.spotify.com/track/xyz
+    // To:   https://open.spotify.com/embed/track/xyz
+    let newUrl = spotifyUrl.replace('open.spotify.com/', 'open.spotify.com/embed/');
+    setEmbedUrl(newUrl);
   };
 
   return (
-    <div className="bg-gray-800 rounded-xl shadow-2xl p-6 h-[400px]">
-      <h2 className="text-xl font-bold text-secondary-purple mb-4 border-b border-gray-700 pb-2">
-        Shared Music Box 🎶
-      </h2>
+    <div className="w-full max-w-2xl mx-auto space-y-6">
+        
+        {/* Input Bar */}
+        <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-xl">
+            <form onSubmit={handleLoadMusic} className="flex gap-3">
+                <input 
+                    type="text" 
+                    placeholder="Paste Spotify Song or Playlist Link..." 
+                    className="flex-1 bg-gray-900 text-white rounded-lg px-4 py-2 border border-gray-600 focus:border-green-500 outline-none"
+                    value={spotifyUrl}
+                    onChange={(e) => setSpotifyUrl(e.target.value)}
+                />
+                <button 
+                    type="submit" 
+                    className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold transition shadow-lg shadow-green-900/50"
+                >
+                    Load
+                </button>
+            </form>
+        </div>
 
-      <iframe 
-        style={{ borderRadius: '12px' }}
-        src={`https://open.spotify.com/embed/track/${currentTrackUri.split(':').pop()}?utm_source=generator&theme=0`}
-        width="100%" 
-        height="100" 
-        frameBorder="0" 
-        allowFullScreen=""
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        loading="lazy"
-        className="mb-4"
-      />
+        {/* The Player */}
+        <div className="relative w-full aspect-video md:aspect-[2/1] bg-black rounded-2xl overflow-hidden border border-gray-800 shadow-2xl">
+            <iframe 
+                style={{ borderRadius: '12px' }} 
+                src={`${embedUrl}?utm_source=generator&theme=0`} 
+                width="100%" 
+                height="100%" 
+                frameBorder="0" 
+                allowFullScreen="" 
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                loading="lazy"
+            ></iframe>
+        </div>
 
-      <form onSubmit={handleSearch} className="flex space-x-2 mb-4">
-        <input
-          type="search"
-          placeholder="Search songs or artists..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-grow p-2 bg-stone-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-secondary-purple focus:border-secondary-purple"
-        />
-        <button 
-          type="submit" 
-          disabled={isSearching}
-          className="bg-primary-pink py-2 px-4 rounded-lg font-bold hover:bg-primary-pink/80 transition duration-200"
-        >
-          {isSearching ? '...' : 'Search'}
-        </button>
-      </form>
-
-      
-      <div className="space-y-2 overflow-y-auto max-h-36">
-        {results.map((track) => (
-          <div 
-            key={track.id} 
-            onClick={() => handleSelectTrack(track.uri)}
-            className="p-2 bg-stone-900 rounded-lg flex justify-between items-center cursor-pointer hover:bg-stone-800 transition duration-150"
-          >
-            <div>
-              <p className="text-sm font-medium text-white">{track.name}</p>
-              <p className="text-xs text-gray-400">{track.artist}</p>
-            </div>
-            <span className="text-secondary-purple text-xs">SELECT</span>
-          </div>
-        ))}
-      </div>
+        <p className="text-center text-gray-500 text-sm">
+            Tip: Paste a Playlist link for endless vibes.
+        </p>
     </div>
   );
 }

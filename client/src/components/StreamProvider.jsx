@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { StreamChat } from 'stream-chat';
-import { StreamVideoClient } from '@stream-io/video-client';
 import { Chat } from 'stream-chat-react';
-import { StreamVideo } from '@stream-io/video-react-sdk';
+// ✅ FIX: Import both Client and Component from the same SDK
+import { StreamVideo, StreamVideoClient } from '@stream-io/video-react-sdk';
 import Spinner from './Spinner';
 
 const getApiBaseUrl = () => {
-  // If we are on localhost, point to the Express server (usually port 5000)
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:5000/api'; 
   }
-  // On Vercel, use the relative path (handled by vercel.json rewrites)
   return '/api';
 };
 
@@ -39,11 +37,10 @@ export default function StreamProvider({ children }) {
       }
 
       try {
-        // ✅ FIX 1: Remove { template: 'stream-token' }. 
-        // We just need a standard token to prove to our backend who we are.
+        // 1. Get Clerk Token
         const clerkToken = await getToken(); 
         
-        // ✅ FIX 2: Call your Backend API
+        // 2. Call Backend to get Stream Token
         const response = await fetch(`${API_BASE_URL}/users/stream-token`, {
           method: 'POST',
           headers: { 
@@ -61,7 +58,7 @@ export default function StreamProvider({ children }) {
         const data = await response.json();
         const { token, userId } = data;
 
-        // 1. Setup Chat Client
+        // 3. Setup Chat Client
         const chatClientInstance = new StreamChat(apiKey);
         await chatClientInstance.connectUser(
             { 
@@ -73,7 +70,7 @@ export default function StreamProvider({ children }) {
         );
         setChatClient(chatClientInstance);
 
-        // 2. Setup Video Client
+        // 4. Setup Video Client
         const videoClientInstance = new StreamVideoClient({ 
           apiKey, 
           user: { 
@@ -94,8 +91,9 @@ export default function StreamProvider({ children }) {
     initializeClient();
 
     return () => {
-      // Cleanup on unmount
-      chatClient?.disconnectUser();
+      // Cleanup
+      if (chatClient) chatClient.disconnectUser();
+      if (videoClient) videoClient.disconnectUser();
       setChatClient(null);
       setVideoClient(null);
     };
@@ -111,9 +109,9 @@ export default function StreamProvider({ children }) {
 
   if (!chatClient || !videoClient) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-lg text-gray-400">
+      <div className="flex items-center justify-center min-h-screen bg-black text-lg text-gray-400">
         <Spinner /> 
-        <span className="ml-3">Connecting to HeartStream services...</span>
+        <span className="ml-3 animate-pulse">Connecting to HeartStream...</span>
       </div>
     );
   }

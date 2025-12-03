@@ -1,117 +1,126 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useUser } from '@clerk/clerk-react';
+import { Link, Plus, Loader2 } from 'lucide-react';
 
-// Helper to determine URL (Localhost vs Vercel)
 const getApiBaseUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:5000/api'; 
   }
-  return '/api'; // Relative path for Vercel
+  return '/api'; 
 };
 
 export default function MovieUploader() {
   const { user } = useUser();
   
-  // 1. Create the missing variables (State)
+  // Changed 'file' to 'movieUrl'
   const [title, setTitle] = useState('');
-  const [file, setFile] = useState(null);
+  const [movieUrl, setMovieUrl] = useState(''); 
   const [status, setStatus] = useState('Idle');
 
-  // 2. Create the missing function
-  const handleUpload = async (e) => {
-    e.preventDefault(); // Stop page refresh
+  const handleSaveLink = async (e) => {
+    e.preventDefault();
 
-    if (!file || !title) {
-      alert("Please select a file and enter a title.");
+    if (!movieUrl || !title) {
+      alert("Please enter a title and a valid link.");
       return;
     }
 
-    if (!user) {
-        setStatus('Error: You must be logged in.');
-        return;
-    }
-
-    setStatus('Uploading... Please wait.');
-
-    // Prepare the data to send
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('video', file); // 'video' matches backend multer field
-    formData.append('clerkUserId', user.id); 
-    formData.append('username', user.username || user.firstName);
+    setStatus('Saving...');
 
     try {
       const API_BASE_URL = getApiBaseUrl();
       
-      // Send to Backend
-      await axios.post(`${API_BASE_URL}/movies/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setStatus(`Uploading... ${percentCompleted}%`);
-        }
+      // We send JSON now, not FormData (because it's just text)
+      await axios.post(`${API_BASE_URL}/movies/save-link`, {
+        title,
+        url: movieUrl,
+        clerkUserId: user.id,
+        username: user.username || user.firstName
       });
 
-      setStatus('✅ Upload Successful!');
+      setStatus('✅ Added to Library!');
       setTitle('');
-      setFile(null);
+      setMovieUrl('');
+      
+      // Reset success message after 3 seconds
+      setTimeout(() => setStatus('Idle'), 3000);
 
     } catch (error) {
-      console.error("Upload failed:", error);
+      console.error("Save failed:", error);
       setStatus(`❌ Error: ${error.response?.data?.message || error.message}`);
     }
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-xl shadow-2xl border border-secondary-purple/50">
-      <h3 className="text-2xl font-bold text-primary-pink mb-4">
-        Upload a Memory 🎞️
-      </h3>
-      <form onSubmit={handleUpload} className="space-y-4">
-        
-        <input 
-          type="text" 
-          placeholder="Movie Title (e.g., 'Our Rome Trip')" 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-          required
-          className="w-full p-3 bg-stone-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-primary-pink focus:border-primary-pink"
-        />
-        
-        <div className="relative border-2 border-dashed border-primary-pink/50 rounded-lg p-6 text-center hover:bg-stone-900 transition duration-200 cursor-pointer">
-          <input 
-            type="file" 
-            onChange={(e) => setFile(e.target.files[0])} 
-            accept="video/*" 
-            required 
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          />
-          <p className="text-primary-pink font-medium">
-            {file ? `Selected: ${file.name}` : 'Click to select video file (MP4, MOV, etc.)'}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Max 2GB recommended.
-          </p>
-        </div>
-        
-        <button 
-          type="submit"
-          disabled={status.includes('Uploading...')}
-          className={`w-full py-3 rounded-lg font-bold transition duration-300 ${
-            status.includes('Uploading...') 
-              ? 'bg-gray-500 cursor-not-allowed' 
-              : 'bg-secondary-purple hover:bg-primary-pink shadow-lg shadow-secondary-purple/50'
-          }`}
-        >
-          {status.includes('Uploading...') ? status : 'Start Upload'}
-        </button>
-      </form>
-      <p className={`mt-4 text-sm ${status.includes('Error') ? 'text-red-400' : 'text-gray-300'}`}>
-        Status: {status}
-      </p>
+    <div className="bg-gray-900/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl relative overflow-hidden group">
+      
+      {/* Decorative Background Glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/20 rounded-full blur-[50px] pointer-events-none"></div>
+
+      <div className="relative z-10">
+        <h3 className="text-xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent mb-4 flex items-center gap-2">
+          <Link size={20} className="text-purple-400" />
+          Add to Collection
+        </h3>
+
+        <form onSubmit={handleSaveLink} className="space-y-4">
+          
+          {/* Title Input */}
+          <div>
+            <label className="text-xs text-gray-400 ml-1 mb-1 block">Movie Title</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Our First Date Movie" 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)} 
+              required
+              className="w-full p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+            />
+          </div>
+
+          {/* Link Input (Replaces File Input) */}
+          <div>
+            <label className="text-xs text-gray-400 ml-1 mb-1 block">Paste Link (YouTube, Drive, MP4)</label>
+            <input 
+              type="url" 
+              placeholder="https://youtube.com/watch?v=..." 
+              value={movieUrl} 
+              onChange={(e) => setMovieUrl(e.target.value)} 
+              required
+              className="w-full p-3 bg-gray-800/50 border border-gray-700 rounded-xl text-blue-300 placeholder-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-sm"
+            />
+          </div>
+          
+          {/* Submit Button */}
+          <button 
+            type="submit"
+            disabled={status === 'Saving...'}
+            className={`w-full py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 ${
+              status === 'Saving...'
+                ? 'bg-gray-700 cursor-not-allowed text-gray-400' 
+                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] text-white'
+            }`}
+          >
+            {status === 'Saving...' ? (
+                <>
+                    <Loader2 size={18} className="animate-spin" /> Saving...
+                </>
+            ) : (
+                <>
+                    <Plus size={18} /> Add to Library
+                </>
+            )}
+          </button>
+        </form>
+
+        {/* Status Message */}
+        {status !== 'Idle' && status !== 'Saving...' && (
+            <p className={`mt-3 text-center text-sm font-medium animate-in fade-in slide-in-from-top-2 ${status.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>
+                {status}
+            </p>
+        )}
+      </div>
     </div>
   );
 }

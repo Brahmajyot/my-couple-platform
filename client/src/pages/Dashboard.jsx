@@ -5,32 +5,34 @@ import {
   Window, 
   MessageList, 
   MessageInput, 
-  ChannelHeader, 
-  Thread, 
   useChatContext 
 } from 'stream-chat-react';
-import CoupleCall from '../components/CoupleCall'; 
-import MovieUploader from '../components/MovieUploader'; 
+import { Phone, PhoneOff, Film, Music, Tv } from 'lucide-react'; // Icons for UI
+
+import VideoRoom from '../components/VideoRoom';
 import SpotifyMusicBox from '../components/SpotifyMusicBox';
+import CoupleCall from '../components/CoupleCall';
 import Spinner from '../components/Spinner';
 
 export default function Dashboard() {
   const { user } = useUser();
-  const { client } = useChatContext(); // Get the Stream Client from context
+  const { client } = useChatContext(); 
   const [channel, setChannel] = useState(null);
+  
+  // --- STATES ---
+  const [activeMode, setActiveMode] = useState('movie'); // 'movie' or 'music'
+  const [isCallActive, setIsCallActive] = useState(false); // Video Call Toggle
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // 1. Setup the Chat Channel Automatically
+  // Load Chat Channel
   useEffect(() => {
     if (!client || !user) return;
 
     const loadChannel = async () => {
-      // Create a specific channel for the couple (using a fixed ID for simplicity)
       const channel = client.channel('messaging', 'our-private-space', {
-        name: 'Just Us ❤️',
-        image: 'https://cdn-icons-png.flaticon.com/512/2904/2904973.png',
-        members: [user.id], // In a real app, you'd add the partner's ID here too
+        name: 'Chat',
+        members: [user.id], 
       });
-
       await channel.watch();
       setChannel(channel);
     };
@@ -40,105 +42,135 @@ export default function Dashboard() {
 
   if (!user) return <div className="flex h-screen items-center justify-center bg-gray-900"><Spinner /></div>;
 
-  // Time-based greeting
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
-
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gray-900 via-[#1a1025] to-gray-950 text-white p-6 md:p-10 font-sans">
+    <div className="flex h-screen bg-black text-white overflow-hidden font-sans">
       
-      {/* --- Header --- */}
-      <header className="flex justify-between items-center mb-10 bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl shadow-lg">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-            HeartStream
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">{greeting}, {user.username || user.firstName}.</p>
-        </div>
-        <div className="flex items-center gap-4">
-            <div className="hidden md:block text-right">
-                <p className="text-xs text-gray-500 uppercase tracking-widest">Status</p>
-                <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span className="text-sm font-medium text-gray-300">Connected</span>
-                </div>
-            </div>
-          <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-11 h-11 ring-2 ring-purple-500/50' } }} />
-        </div>
-      </header>
-
-      {/* --- Main Grid --- */}
-      <div className="grid lg:grid-cols-12 gap-8">
+      {/* --- LEFT SIDE: MAIN MEDIA AREA --- */}
+      <div className="flex-1 flex flex-col relative min-w-0">
         
-        {/* LEFT COLUMN (Chat & Actions) - Spans 8 columns */}
-        <div className="lg:col-span-8 flex flex-col gap-8">
-          
-          {/* Action Row: Call & Upload */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="transform hover:scale-[1.01] transition duration-300">
-                <CoupleCall />
-            </div>
-            <div className="transform hover:scale-[1.01] transition duration-300">
-                <MovieUploader />
-            </div>
-          </div>
+        {/* 1. TOP HEADER (CONTROLS) */}
+        <header className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 shadow-lg z-20">
+            
+            {/* Logo */}
+            <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent hidden md:block">
+                HeartStream
+            </h1>
 
-          {/* Main Chat Window */}
-          <div className="flex-grow bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[600px] relative">
+            {/* CENTER: MODE TOGGLE (The Switch) */}
+            <div className="flex bg-gray-800 rounded-full p-1 border border-gray-700">
+                <button 
+                    onClick={() => setActiveMode('movie')}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
+                        activeMode === 'movie' 
+                        ? 'bg-secondary-purple text-white shadow-lg shadow-purple-500/30' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <Film size={16} /> Movie
+                </button>
+                <button 
+                    onClick={() => setActiveMode('music')}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all duration-300 ${
+                        activeMode === 'music' 
+                        ? 'bg-green-600 text-white shadow-lg shadow-green-500/30' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <Music size={16} /> Music
+                </button>
+            </div>
+
+            {/* RIGHT: CALL & PROFILE */}
+            <div className="flex items-center gap-4">
+                {/* Video Call Toggle Button */}
+                <button 
+                    onClick={() => setIsCallActive(!isCallActive)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all border ${
+                        isCallActive 
+                        ? 'bg-red-500/20 text-red-400 border-red-500/50 hover:bg-red-500/30' 
+                        : 'bg-gray-800 text-green-400 border-green-500/30 hover:bg-green-500/20'
+                    }`}
+                >
+                    {isCallActive ? <PhoneOff size={18} /> : <Phone size={18} />}
+                    <span className="hidden md:inline">{isCallActive ? 'End Call' : 'Video Call'}</span>
+                </button>
+
+                <div className="w-px h-8 bg-gray-700 mx-2 hidden md:block"></div>
+                
+                <UserButton appearance={{ elements: { userButtonAvatarBox: 'w-9 h-9 ring-2 ring-purple-500/30' } }} />
+            </div>
+        </header>
+
+        {/* 2. MAIN CONTENT STAGE */}
+        <div className="flex-1 relative bg-black overflow-hidden flex items-center justify-center">
+            
+            {/* A. MOVIE PLAYER */}
+            {activeMode === 'movie' && (
+                <div className="w-full h-full animate-in fade-in duration-500">
+                    <VideoRoom />
+                </div>
+            )}
+
+            {/* B. SPOTIFY MUSIC BOX */}
+            {activeMode === 'music' && (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-black animate-in fade-in duration-500 p-8">
+                    <div className="w-full max-w-4xl bg-gray-900 border border-gray-800 rounded-3xl p-8 shadow-2xl shadow-green-900/20">
+                        <div className="text-center mb-8">
+                             <div className="inline-block p-4 rounded-full bg-green-500/10 mb-4">
+                                <Music size={48} className="text-green-500" />
+                             </div>
+                             <h2 className="text-3xl font-bold text-white mb-2">Vibe Session</h2>
+                             <p className="text-gray-400">Control the music for both of you.</p>
+                        </div>
+                        <SpotifyMusicBox />
+                    </div>
+                </div>
+            )}
+
+            {/* C. FLOATING VIDEO CALL (Picture-in-Picture) */}
+            {isCallActive && (
+                <div className="absolute bottom-6 right-6 z-50 w-64 md:w-80 bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-700 animate-in slide-in-from-bottom-10 fade-in duration-300">
+                    <div className="bg-gray-800 px-4 py-2 flex justify-between items-center border-b border-gray-700 cursor-move">
+                        <span className="text-xs font-bold text-green-400 flex items-center gap-1">
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> 
+                            Live Call
+                        </span>
+                        <button onClick={() => setIsCallActive(false)} className="text-gray-400 hover:text-white">
+                            ✕
+                        </button>
+                    </div>
+                    <div className="h-48 md:h-56 bg-black relative">
+                        {/* We pass a 'compact' prop if your CoupleCall supports it, otherwise just rendering it is fine */}
+                        <CoupleCall /> 
+                    </div>
+                </div>
+            )}
+
+        </div>
+      </div>
+
+      {/* --- RIGHT SIDE: CHAT SIDEBAR --- */}
+      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-l border-gray-800 bg-gray-900 flex flex-col flex-shrink-0 z-30`}>
+        <div className="h-16 bg-gray-900 flex items-center px-4 border-b border-gray-800">
+            <span className="font-bold text-gray-200">Chat & Notes</span>
+        </div>
+
+        <div className="flex-1 overflow-hidden flex flex-col relative custom-chat-theme">
             {!channel ? (
-              <div className="flex items-center justify-center h-full text-gray-500 gap-2">
-                <Spinner /> Loading your private space...
+              <div className="flex items-center justify-center h-full">
+                <Spinner />
               </div>
             ) : (
               <Channel channel={channel}>
                 <Window>
-                  <div className="bg-white/5 border-b border-white/5 p-2">
-                    <ChannelHeader />
-                  </div>
                   <MessageList />
-                  <MessageInput focus />
+                  <MessageInput placeholder="Type a message..." />
                 </Window>
-                <Thread />
               </Channel>
             )}
-            
-            {/* Decorative background blur for chat */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-          </div>
         </div>
-
-        {/* RIGHT COLUMN (Music & Vibe) - Spans 4 columns */}
-        <div className="lg:col-span-4 space-y-8">
-            
-            {/* Music Box */}
-            <div className="sticky top-8">
-                <div className="bg-gradient-to-b from-gray-800/80 to-gray-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
-                    <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-                        <h2 className="text-lg font-semibold text-purple-300">Our Vibe 🎵</h2>
-                        <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">Now Playing</span>
-                    </div>
-                    
-                    {/* Spotify Component */}
-                    <div className="rounded-xl overflow-hidden shadow-lg border border-white/5">
-                        <SpotifyMusicBox /> 
-                    </div>
-
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-500 text-xs italic">
-                            "Music is the shorthand of emotion."
-                        </p>
-                    </div>
-                </div>
-
-                {/* Optional: Date/Countdown Card or Quote */}
-                <div className="mt-8 bg-white/5 border border-white/5 rounded-2xl p-6 text-center">
-                    <p className="text-gray-400 text-sm uppercase tracking-widest mb-1">Together Since</p>
-                    <p className="text-2xl font-mono text-pink-300">2025</p>
-                </div>
-            </div>
-        </div>
-
       </div>
+
     </div>
   );
 }
