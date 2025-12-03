@@ -1,4 +1,8 @@
+@import "tailwindcss";
+
+
 /* --- Stream Chat Dark Theme Overrides --- */
+
 .str-chat {
   --str-chat__primary-color: #9333ea; /* Purple */
   --str-chat__active-primary-color: #7e22ce;
