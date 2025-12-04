@@ -29,6 +29,7 @@ export default function VideoRoom() {
       }
 
       // --- GOOGLE DRIVE FILE LINK ---
+      // Converts "View" link -> "Direct Stream" link
       if (trimmed.includes("drive.google.com/file")) {
         const id = trimmed.match(/\/file\/d\/(.*?)\//)?.[1];
         if (id) return `https://drive.google.com/uc?export=download&id=${id}`;
@@ -47,10 +48,9 @@ export default function VideoRoom() {
   // -------------------------------
   const handleLoadVideo = (e) => {
     e.preventDefault();
-    setError("");
+    setError(""); // Clear previous errors
 
     if (!inputUrl) {
-      setError("Please paste a valid video link.");
       return;
     }
 
@@ -71,7 +71,7 @@ export default function VideoRoom() {
       {/* Decorative Glow */}
       <div className="absolute top-0 left-1/4 w-96 h-1 bg-pink-500/50 blur-[50px] pointer-events-none"></div>
 
-      {/* TOP BAR */}
+      {/* --- TOP BAR --- */}
       <div className="relative z-20 bg-gray-900/80 backdrop-blur-md border-b border-white/10 p-4 flex gap-4 items-center shadow-lg">
         
         <div className="hidden md:flex items-center gap-2 text-pink-400 font-bold px-2 border-r border-white/10 pr-4">
@@ -105,32 +105,34 @@ export default function VideoRoom() {
         </form>
       </div>
 
-      {/* ERROR MESSAGE */}
+      {/* --- ERROR MESSAGE --- */}
       {error && (
-        <div className="bg-red-500/10 text-red-400 flex items-center gap-2 px-4 py-2 border-b border-red-500/20 text-sm">
+        <div className="bg-red-500/10 text-red-400 flex items-center gap-2 px-4 py-2 border-b border-red-500/20 text-sm animate-in fade-in slide-in-from-top-2">
           <AlertTriangle size={16} />
           {error}
         </div>
       )}
 
-      {/* MAIN VIDEO AREA */}
+      {/* --- MAIN VIDEO AREA --- */}
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden group">
         {url ? (
           <div className="w-full h-full animate-in fade-in duration-700">
             <ReactPlayer
               url={url}
               playing={playing}
-              controls
+              controls={true}
               width="100%"
               height="100%"
               style={{ position: "absolute", top: 0, left: 0 }}
               config={{
                 youtube: { playerVars: { showinfo: 1 } },
               }}
+              // Catches errors (like private videos or broken links)
               onError={() => setError("Failed to load video. Check the link.")}
             />
           </div>
         ) : (
+          /* Empty State */
           <div className="text-center relative z-10 p-8">
             <div className="relative inline-block mb-6">
               <div className="absolute inset-0 bg-pink-500 blur-2xl opacity-20 animate-pulse"></div>
@@ -141,14 +143,14 @@ export default function VideoRoom() {
               Ready for Movie Night?
             </h3>
             <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
-              Paste a link above to start watching.  
+              Paste a link above to start watching. <br />
               Supports <span className="text-pink-500/80">YouTube</span>,{" "}
               <span className="text-purple-500/80">Google Drive</span>, and more.
             </p>
           </div>
         )}
 
-        {/* Grain Overlay */}
+        {/* Cinematic Grain Overlay */}
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none"></div>
       </div>
     </div>
