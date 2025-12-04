@@ -1,9 +1,9 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute'; 
-import StreamProvider from './components/StreamProvider'; 
+import Home from './pages/Home.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx'; 
+import StreamProvider from './components/StreamProvider.jsx'; 
 
 function App() {
   return (
